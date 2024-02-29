@@ -80,19 +80,24 @@ class PainterAgent:
             if not event.is_final:
                 # received a partial result, STT result be updated as confidence increases
                 continue
-            # do something with final speech
-            # logging.info("Do something with final speech")
             if event.alternatives:
-                # Accessing the first (most confident) alternative
                 first_alternative = event.alternatives[0]
-                # Assuming the first alternative is a dict or object that contains the actual text
-                # You might need to adjust the following line based on the actual structure
                 recognized_text = first_alternative.text  # Adjust this attribute access as necessary
                 print("Recognized Text:", recognized_text)
+                # Save the recognized text to file
+                await self.save_text_to_file(recognized_text)
             else:
                 print("No recognized text found in the event.")
             pass
         await stream.aclose()
+
+    async def save_text_to_file(self, text):
+        """
+        Saves the given text to a file named 'recognized_text.txt' in append mode.
+        """
+        with open("recognized_text.txt", "a") as file:
+            file.write(f"{text}\n")
+
 
 
 
