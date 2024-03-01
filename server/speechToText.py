@@ -17,6 +17,7 @@ class PainterAgent:
     def __init__(self, ctx: agents.JobContext):
         # plugins
         self.vad = silero.VAD()
+        self.speaking_participants = {}
 
         self.ctx = ctx
         self.chat = rtc.ChatManager(ctx.room)
@@ -32,6 +33,7 @@ class PainterAgent:
         ):
             self.ctx.create_task(self.audio_track_worker(track))
             if isinstance(track, rtc.RemoteAudioTrack):
+                self.speaking_participants[participant.sid] = True
                 print(f"Participant with ID '{participant.sid}' subscribed to audio track '{track.sid}'")
             else:
         # Handle other track types differently (optional)
@@ -83,11 +85,21 @@ class PainterAgent:
             if event.alternatives:
                 first_alternative = event.alternatives[0]
                 recognized_text = first_alternative.text  # Adjust this attribute access as necessary
+
+                for participant_id, is_speaking in self.speaking_participants.items():
+                    if is_speaking:
+                        # Associate text with the speaking participant
+                        participant_text = f"{participant_id}: {recognized_text})\n"
+                        print(participant_text)  # or save to file
                 print("Recognized Text:", recognized_text)
+                with open("recognized_text.txt", "a") as file:
+                    file.write(participant_text)
                 # Save the recognized text to file
                 await self.save_text_to_file(recognized_text)
             else:
                 print("No recognized text found in the event.")
+                participant_text = f"{participant_id}: (silent)"
+                print(participant_text)  # or save to file
             pass
         await stream.aclose()
 
