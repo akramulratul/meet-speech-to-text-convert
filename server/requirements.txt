@@ -33,7 +33,6 @@ multidict==6.0.5
 mypy-extensions==1.0.0
 networkx==3.2.1
 numpy==1.26.4
-openai==1.7.2
 opencv-python==4.9.0.80
 packaging==23.2
 protobuf==4.25.3
@@ -51,5 +50,4 @@ typing-inspect==0.9.0
 typing_extensions==4.10.0
 urllib3==2.2.1
 verboselogs==1.7
-websockets==12.0
 yarl==1.9.4

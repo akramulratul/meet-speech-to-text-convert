@@ -18,13 +18,10 @@ class PainterAgent:
         # plugins
         self.vad = silero.VAD()
         self.speaking_participants = {}
-
         self.ctx = ctx
         self.chat = rtc.ChatManager(ctx.room)
         self.prompt: Optional[str] = None
         self.current_image: Optional[rtc.VideoFrame] = None
-        
-
         # setup callbacks
         def subscribe_cb(
             track: rtc.Track,
@@ -32,13 +29,15 @@ class PainterAgent:
             participant: rtc.RemoteParticipant,
         ):
             self.ctx.create_task(self.audio_track_worker(track))
+            
             if isinstance(track, rtc.RemoteAudioTrack):
                 self.speaking_participants[participant.sid] = True
+                
+                print(f"participant{str(self)}")
                 print(f"Participant with ID '{participant.sid}' subscribed to audio track '{track.sid}'")
             else:
         # Handle other track types differently (optional)
                 print(f"Received unexpected track type: {type(track)}")
-
         def process_chat(msg: rtc.ChatMessage):
             self.prompt = msg.message
 
@@ -49,7 +48,6 @@ class PainterAgent:
         # give a bit of time for the user to fully connect so they don't miss
         # the welcome message
         await asyncio.sleep(1)
-
         # create_task is used to run coroutines in the background
         self.ctx.create_task(
             self.chat.send_message(
@@ -85,32 +83,23 @@ class PainterAgent:
             if event.alternatives:
                 first_alternative = event.alternatives[0]
                 recognized_text = first_alternative.text  # Adjust this attribute access as necessary
-
+                speaking_participant = None
+                # speaking_participant_identity = None
                 for participant_id, is_speaking in self.speaking_participants.items():
                     if is_speaking:
-                        # Associate text with the speaking participant
-                        participant_text = f"{participant_id}: {recognized_text})\n"
-                        print(participant_text)  # or save to file
-                print("Recognized Text:", recognized_text)
-                with open("recognized_text.txt", "a") as file:
-                    file.write(participant_text)
-                # Save the recognized text to file
-                await self.save_text_to_file(recognized_text)
+                        speaking_participant = participant_id
+                        # speaking_participant_identity = self.ctx.room.participants[participant_id].identity
+                        break
+
+                if speaking_participant and len(recognized_text):
+                    await self.chat.send_message(recognized_text)
+                else:
+                    print("No speaker identified for recognized text.")
+                    message = f"(Unknown): {recognized_text}"  # Handle unidentified speaker
             else:
                 print("No recognized text found in the event.")
-                participant_text = f"{participant_id}: (silent)"
-                print(participant_text)  # or save to file
-            pass
+                pass
         await stream.aclose()
-
-    async def save_text_to_file(self, text):
-        """
-        Saves the given text to a file named 'recognized_text.txt' in append mode.
-        """
-        with open("recognized_text.txt", "a") as file:
-            file.write(f"{text}\n")
-
-
 
 
 
